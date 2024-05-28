@@ -9,4 +9,4 @@ try:
     response.raise_for_status()
     print("Transcriptions:", response.json())
 except requests.exceptions.RequestException as e:
-    print("Error:", e)
+    print("Error:", e) 
