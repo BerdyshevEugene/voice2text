@@ -1,115 +1,56 @@
+import aiohttp
+import aiofiles
+import asyncio
 import os
-import wave
-import json
-import numpy as np
-import sys
 
-from dotenv import load_dotenv
 from loguru import logger
-from vosk import Model, KaldiRecognizer, SpkModel, SetLogLevel
-from sklearn.cluster import KMeans
+from tempfile import NamedTemporaryFile
 
-SetLogLevel(-1)
-
-load_dotenv()
-
-SPK_MODEL_PATH = r'C:\Users\adm03\Desktop\work\programming\prjct_vosk\src\models\vosk-model-spk-0.4'
-VOSK_MODEL_PATH = r'C:\Users\adm03\Desktop\work\programming\prjct_vosk\src\models\vosk-model-ru-0.42\vosk-model-ru-0.42'
+from handlers.socket_communication import send_data_to_socket
+from handlers.audio_vosk import process_audio
 
 
-# def extract_audio_features(file_path):
-#     with wave.open(file_path, 'rb') as wf:
-#         sample_rate = wf.getframerate()
-#         duration = wf.getnframes() / sample_rate
-#         audio = wf.readframes(wf.getnframes())
-
-#     audio = np.frombuffer(audio, dtype=np.int16)
-#     threshold = 1000
-#     is_silent = audio < threshold
-#     pauses = [i for i, silent in enumerate(is_silent) if silent]
-
-#     return duration, pauses
-
-
-def diarization(answer):
-    transcriptions = []
-    n_clusters = 2
-    kmeans = None
-
-    X = [x['spk'] for x in answer if 'spk' in x]
-    if len(X) >= n_clusters:
-        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
-
-    first_spk = None
-    last_spk = None
-
-    for frase in answer:
-        if 'spk' in frase and kmeans:
-            spk = int(kmeans.predict([frase['spk']])[0])
-            if first_spk is None:
-                first_spk = spk
-            last_spk = spk
-        else:
-            last_spk = 1 if last_spk == 0 else 0
-
-        try:
-            transcriptions.append({'text': frase['text'], 'spk': last_spk})
-        except:
-            pass
-
-    for item in transcriptions:
-        if item['spk'] == first_spk:
-            item['spk'] = 0
-        else:
-            item['spk'] = 1
-
-    return transcriptions
+async def download_audio(url: str) -> str | None:
+    try:
+        logger.info(f'downloading audio from {url}')
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    tmp_file = NamedTemporaryFile(delete=False, suffix='.wav')
+                    async with aiofiles.open(tmp_file.name, 'wb') as f:
+                        await f.write(await response.read())
+                    logger.info(f'temporary file created: {tmp_file.name}')
+                    return tmp_file.name
+                else:
+                    logger.error(
+                        f'failed to download audio: {response.status}')
+                    return None
+    except Exception as e:
+        logger.error(f'error in download_audio: {e}')
+        return None
 
 
-def process_audio(file_path):
-    transcriptions = []
-    # duration, pauses = extract_audio_features(file_path)
-    
-    wf = wave.open(file_path, 'rb')
-    sample_rate = wf.getframerate()
-    if sample_rate > 16000:
-        sample_rate = 16000
-    elif sample_rate < 8000:
-        sample_rate = 8000
+async def process_audio_background(master_id: int, url: str):
+    try:
+        logger.info(f'processing audio for MasterID {master_id}, URL: {url}')
+        file_path = await download_audio(url)
+        if not file_path or not os.path.isfile(file_path):
+            logger.error(f'file not found or invalid: {file_path}')
+            return
 
-    if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getcomptype() != 'NONE':
-        logger.info('audio file must be WAV format mono PCM')
-        sys.exit(1)
+        transcriptions = await asyncio.to_thread(process_audio, file_path)
+        text_content = '\n'.join(transcriptions)
 
-    model = Model(VOSK_MODEL_PATH)
-    spk_model = SpkModel(SPK_MODEL_PATH)
-    rec = KaldiRecognizer(model, sample_rate)
-    rec.SetSpkModel(spk_model)
-    rec.SetMaxAlternatives(0)
+        await send_data_to_socket({
+            'ChannelName': 'IncomingCall',
+            'Event': 'voice2text',
+            'MasterID': master_id,
+            'text': text_content
+        })
 
-    while True:
-        data = wf.readframes(4000)
-        if len(data) == 0:
-            break
-        if rec.AcceptWaveform(data):
-            res = json.loads(rec.Result())
-            if 'spk' in res:
-                transcriptions.append(res)
-
-    res = json.loads(rec.FinalResult())
-    if 'spk' in res:
-        transcriptions.append(res)
-
-    wf.close()
-
-    if len(transcriptions) > 0:
-        transcriptions = diarization(transcriptions)
-
-    structured_text = []
-    for item in transcriptions:
-        speaker = 'оператор' if item['spk'] == 0 else 'абонент'
-        structured_text.append(f'{speaker}: {item["text"]}')
-
-    formatted_text = "\n".join(structured_text)
-    print(f'formatted Text: {formatted_text}')  # убрать, после отладки
-    return structured_text
+        logger.success(
+            f'audio processed successfully for MasterID {master_id}')
+        os.remove(file_path)  # удаляем временный файл после обработки
+        logger.info(f'temporary file deleted: {file_path}')
+    except Exception as e:
+        logger.error(f'error processing audio: {e}')

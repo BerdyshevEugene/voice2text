@@ -4,6 +4,9 @@ from tempfile import NamedTemporaryFile
 
 
 def download_audio(url):
+    '''
+    функция скачивает .wav файл по ссылке
+    '''
     response = requests.get(url)
     if response.status_code == 200:
         with NamedTemporaryFile(delete=True, suffix='.wav') as tmp_file:
