@@ -2,7 +2,6 @@ import aiohttp
 import os
 
 from dotenv import load_dotenv
-
 from loguru import logger
 
 load_dotenv()
@@ -13,7 +12,7 @@ LOCAL_PORT = os.getenv('PORT', '64121')
 
 async def send_data_to_socket(data):
     '''
-    отправка данных в сокет
+    отправка данных в сокет datagate
     '''
     try:
         url = f'http://{LOCAL_HOST}:{LOCAL_PORT}/process_data'

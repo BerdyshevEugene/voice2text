@@ -10,7 +10,7 @@ from handlers.audio_processing import process_audio_background
 
 async def handle_message(message: IncomingMessage):
     '''
-    обработка сообщений RabbitMQ
+    обработка данных из RabbitMQ
     '''
     try:
         data = json.loads(message.body)

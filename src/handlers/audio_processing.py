@@ -8,9 +8,13 @@ from tempfile import NamedTemporaryFile
 
 from handlers.socket_communication import send_data_to_socket
 from handlers.audio_vosk import process_audio
+from rabbitmq.publisher import publish_results_to_queue
 
 
 async def download_audio(url: str) -> str | None:
+    '''
+    скачивает аудио по ссылке в формате .wav
+    '''
     try:
         logger.info(f'downloading audio from {url}')
         async with aiohttp.ClientSession() as session:
@@ -31,6 +35,9 @@ async def download_audio(url: str) -> str | None:
 
 
 async def process_audio_background(master_id: int, url: str):
+    '''
+    отправляет результат обработки аудио в RabbitMQ/Datagate
+    '''
     try:
         logger.info(f'processing audio for MasterID {master_id}, URL: {url}')
         file_path = await download_audio(url)
@@ -41,12 +48,15 @@ async def process_audio_background(master_id: int, url: str):
         transcriptions = await asyncio.to_thread(process_audio, file_path)
         text_content = '\n'.join(transcriptions)
 
-        await send_data_to_socket({
+        data = ({
             'ChannelName': 'IncomingCall',
             'Event': 'voice2text',
             'MasterID': master_id,
             'text': text_content
         })
+
+        await publish_results_to_queue(data)
+        # await send_data_to_socket(data)
 
         logger.success(
             f'audio processed successfully for MasterID {master_id}')

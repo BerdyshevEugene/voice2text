@@ -1,3 +1,5 @@
+from pydub import AudioSegment
+from pydub.effects import normalize
 import os
 import wave
 import json
@@ -7,7 +9,6 @@ import sys
 from dotenv import load_dotenv
 from loguru import logger
 from vosk import Model, KaldiRecognizer, SpkModel, SetLogLevel
-from sklearn.cluster import KMeans
 
 SetLogLevel(-1)
 
@@ -17,44 +18,17 @@ SPK_MODEL_PATH = r'C:\Users\adm03\Desktop\work\programming\prjct_vosk\src\models
 VOSK_MODEL_PATH = r'C:\Users\adm03\Desktop\work\programming\prjct_vosk\src\models\vosk-model-ru-0.42\vosk-model-ru-0.42'
 
 
-def diarization(answer):
-    transcriptions = []
-    n_clusters = 2
-    kmeans = None
-
-    X = [x['spk'] for x in answer if 'spk' in x]
-    X = np.array(X).reshape(-1, 1)  # преобразуем в двумерный массив
-    if len(X) >= n_clusters:
-        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
-
-    first_spk = None
-    last_spk = None
-
-    for frase in answer:
-        if 'spk' in frase and kmeans:
-            spk = int(kmeans.predict(np.array(frase['spk']).reshape(1, -1))[0])
-            if first_spk is None:
-                first_spk = spk
-            last_spk = spk
-        else:
-            last_spk = 1 if last_spk == 0 else 0
-
-        try:
-            transcriptions.append({'text': frase['text'], 'spk': last_spk})
-        except Exception as e:
-            logger.error(f'Error appending transcription: {e}')
-            pass
-
-    for item in transcriptions:
-        if item['spk'] == first_spk:
-            item['spk'] = 0
-        else:
-            item['spk'] = 1
-
-    return transcriptions
+def normalize_audio(file_path):
+    '''нормализация и фильтрация шума в аудиофайле'''
+    audio = AudioSegment.from_wav(file_path)
+    normalized_audio = normalize(audio)
+    temp_file = file_path.replace('.wav', '_normalized.wav')
+    normalized_audio.export(temp_file, format='wav')
+    return temp_file
 
 
 def process_audio(file_path):
+    file_path = normalize_audio(file_path)
     transcriptions = []
 
     wf = wave.open(file_path, 'rb')
@@ -82,26 +56,31 @@ def process_audio(file_path):
         if len(data) == 0:
             break
 
+        # разделение на левый и правый канал
         left_channel = np.frombuffer(data, dtype=np.int16)[0::2]
         right_channel = np.frombuffer(data, dtype=np.int16)[1::2]
 
+        # обработка левого канала (абонент)
         if rec_left.AcceptWaveform(left_channel.tobytes()):
             res = json.loads(rec_left.Result())
             if 'text' in res:
-                res['spk'] = 0
+                res['spk'] = 0  # абонент
                 transcriptions.append(res)
 
+        # обработка правого канала (оператор)
         if rec_right.AcceptWaveform(right_channel.tobytes()):
             res = json.loads(rec_right.Result())
             if 'text' in res:
-                res['spk'] = 1
+                res['spk'] = 1  # оператор
                 transcriptions.append(res)
 
+    # завершение распознавания для левого канала
     res_left = json.loads(rec_left.FinalResult())
     if 'text' in res_left:
         res_left['spk'] = 0
         transcriptions.append(res_left)
 
+    # завершение распознавания для правого канала
     res_right = json.loads(rec_right.FinalResult())
     if 'text' in res_right:
         res_right['spk'] = 1
@@ -109,9 +88,7 @@ def process_audio(file_path):
 
     wf.close()
 
-    if len(transcriptions) > 0:
-        transcriptions = diarization(transcriptions)
-
+    # форматирование результатов
     structured_text = []
     for item in transcriptions:
         if item['text'].strip():
@@ -119,5 +96,5 @@ def process_audio(file_path):
             structured_text.append(f'{speaker}: {item["text"]}')
 
     formatted_text = "\n".join(structured_text)
-    print(f'formatted Text: {formatted_text}')  # убрать, после отладки
+    print(f'formatted Text: {formatted_text}')  # убрать после отладки
     return structured_text
