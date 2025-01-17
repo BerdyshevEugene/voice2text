@@ -14,8 +14,6 @@ SetLogLevel(-1)
 
 load_dotenv()
 
-SPK_MODEL_PATH = r'C:\Users\adm03\Desktop\work\programming\prjct_vosk\src\models\vosk-model-spk-0.4'
-VOSK_MODEL_PATH = r'C:\Users\adm03\Desktop\work\programming\prjct_vosk\src\models\vosk-model-ru-0.42\vosk-model-ru-0.42'
 
 
 def normalize_audio(file_path):
