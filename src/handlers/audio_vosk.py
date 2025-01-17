@@ -13,6 +13,8 @@ from vosk import Model, KaldiRecognizer, SpkModel, SetLogLevel
 SetLogLevel(-1)
 
 load_dotenv()
+SPK_MODEL_PATH = os.getenv('SPK_MODEL_PATH')
+VOSK_MODEL_PATH = os.getenv('VOSK_MODEL_PATH')
 
 
 
