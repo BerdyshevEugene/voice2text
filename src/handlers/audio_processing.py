@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile
 
 from handlers.socket_communication import send_data_to_socket
 from handlers.audio_vosk import process_audio
-from rabbitmq.publisher import publish_results_to_queue
+from rabbitmq.publisher import publish_results_to_queue, publish_results_to_v2t_vrbmtrcs_queue
 
 
 async def download_audio(url: str) -> str | None:
@@ -56,6 +56,7 @@ async def process_audio_background(master_id: int, url: str):
         })
 
         await publish_results_to_queue(data)
+        await publish_results_to_v2t_vrbmtrcs_queue(data)
         # await send_data_to_socket(data)
 
         logger.success(

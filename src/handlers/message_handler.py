@@ -25,6 +25,7 @@ async def handle_message(message: IncomingMessage):
 
         await process_audio_background(master_id, url)
         await message.ack()
+
     except Exception as e:
         logger.error(f'error in handle_message: {e}')
         await message.reject()

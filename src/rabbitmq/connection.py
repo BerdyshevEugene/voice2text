@@ -8,7 +8,7 @@ from handlers.message_handler import handle_message
 
 
 RABBITMQ_URL = os.getenv('RABBITMQ_URL', 'amqp://guest:guest@localhost/')
-QUEUE_NAME = os.getenv('QUEUE_NAME', 'v2t_queue')
+QUEUE_NAME = os.getenv('QUEUE_NAME', 'dg_v2t_queue')
 
 
 async def connect_to_rabbitmq():
