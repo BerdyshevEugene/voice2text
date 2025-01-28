@@ -46,8 +46,30 @@ uvicorn main:app --reload
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
+## Инструкция Docker
 
-
+### Сборка
+1. Авторизация в Docker Hub 
+```
+docker login
+``` 
+2. Сборка Docker-образа 
+```
+docker build -t gsssupport/myvoice2text_transcriberapp:latest .
+```
+3. Публикация образа в Docker Hub
+```
+docker push gsssupport/myvoice2text_transcriberapp:latest
+```
+### Запуск
+1. Авторизация в Docker Hub 
+```
+docker login
+``` 
+2. Запуск Docker-контейнера
+```
+docker-compose up
+```
 ## Остальная информация
 
 CompanyName: GMG
