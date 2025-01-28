@@ -21,7 +21,7 @@ async def publish_results_to_queue(data: dict):
         async with connection:
             channel = await connection.channel()
             await channel.default_exchange.publish(
-                Message(body=json.dumps(data).encode()),
+                Message(body=json.dumps(data).encode(), delivery_mode=2),
                 routing_key=V2T_RESULTS_QUEUE
             )
             logger.success(
@@ -42,7 +42,7 @@ async def publish_results_to_v2t_vrbmtrcs_queue(data: dict):
             channel = await connection.channel()
             await channel.declare_queue(V2T_VERBAMETRICS_QUEUE, durable=True, passive=True)
             await channel.default_exchange.publish(
-                Message(body=json.dumps(data).encode()),
+                Message(body=json.dumps(data).encode(), delivery_mode=2),
                 routing_key=V2T_VERBAMETRICS_QUEUE
             )
             logger.success(
