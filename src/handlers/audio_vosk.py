@@ -1,14 +1,17 @@
 from pydub import AudioSegment
-from pydub.effects import normalize
+from pydub.effects import normalize, low_pass_filter, high_pass_filter
 import os
 import wave
 import json
 import numpy as np
+import noisereduce as nr
 import sys
 
 from dotenv import load_dotenv
 from loguru import logger
 from vosk import Model, KaldiRecognizer, SpkModel, SetLogLevel
+
+from handlers.dict import replacement_dict
 
 SetLogLevel(-1)
 
@@ -16,6 +19,36 @@ load_dotenv()
 SPK_MODEL_PATH = os.getenv('SPK_MODEL_PATH')
 VOSK_MODEL_PATH = os.getenv('VOSK_MODEL_PATH')
 
+
+def reduce_noise(file_path):
+    '''мягкое шумоподавление с сохранением высоких частот'''
+    audio = AudioSegment.from_wav(file_path)
+    samples = np.array(audio.get_array_of_samples())
+
+    reduced_noise = nr.reduce_noise(
+        y=samples,
+        sr=audio.frame_rate,
+        prop_decrease=0.5,  # Уменьшаем шум на 50%
+        stationary=False,   # Для нестационарного шума
+        n_fft=1024,         # Размер окна для FFT
+        win_length=512,     # Длина окна
+        hop_length=256      # Шаг окна
+    )
+
+    # восстановление высоких частот
+    restored_audio = high_pass_filter(
+        AudioSegment(
+            reduced_noise.tobytes(),
+            frame_rate=audio.frame_rate,
+            sample_width=audio.sample_width,
+            channels=audio.channels
+        ),
+        cutoff=2000
+    )
+
+    temp_file = file_path.replace('.wav', '_noise_reduced.wav')
+    restored_audio.export(temp_file, format='wav')
+    return temp_file
 
 
 def normalize_audio(file_path):
@@ -27,8 +60,21 @@ def normalize_audio(file_path):
     return temp_file
 
 
-def process_audio(file_path):
+def improve_audio_quality(file_path):
+    # file_path = reduce_noise(file_path)
     file_path = normalize_audio(file_path)
+    return file_path
+
+
+def correct_transcription(text):
+    '''функция для замены ошибочных фраз в тексте'''
+    for wrong, correct in replacement_dict.items():
+        text = text.replace(wrong, correct)
+    return text
+
+
+def process_audio(file_path):
+    file_path = improve_audio_quality(file_path)
     transcriptions = []
 
     wf = wave.open(file_path, 'rb')
@@ -47,9 +93,11 @@ def process_audio(file_path):
 
     rec_left = KaldiRecognizer(model, sample_rate)
     rec_left.SetSpkModel(spk_model)
+    rec_left.SetPartialWords(True)
 
     rec_right = KaldiRecognizer(model, sample_rate)
     rec_right.SetSpkModel(spk_model)
+    rec_right.SetPartialWords(True)
 
     while True:
         data = wf.readframes(4000)
@@ -93,7 +141,8 @@ def process_audio(file_path):
     for item in transcriptions:
         if item['text'].strip():
             speaker = 'абонент' if item['spk'] == 0 else 'оператор'
-            structured_text.append(f'{speaker}: {item["text"]}')
+            corrected_text = correct_transcription(item['text'])
+            structured_text.append(f'{speaker}: {corrected_text}')
 
     formatted_text = "\n".join(structured_text)
     print(f'formatted Text: {formatted_text}')  # убрать после отладки
