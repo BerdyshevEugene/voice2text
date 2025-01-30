@@ -160,3 +160,8 @@ cython_debug/
 send.py
 /vosk/
 dict.py
+
+# CI/CD
+inventory.ini
+ssh_key_docker_jenkins
+ssh_key_docker_jenkins.pub

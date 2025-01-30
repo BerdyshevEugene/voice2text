@@ -1,0 +1,40 @@
+---
+- name: Install git
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure target directory exists
+      file:
+        path: /srv/voice2text/
+        state: directory
+        mode: '0755'
+
+    - name: Copy .env file
+      copy:
+        src: .env
+        dest: /srv/voice2text/.env
+        mode: '0644'
+
+    - name: Copy docker-compose.yml file
+      copy:
+        src: docker-compose.yml
+        dest: /srv/voice2text/docker-compose.yml
+        mode: '0644'
+
+    - name: Login to Docker registry
+      docker_login:
+        username: "{{ docker_user }}"
+        password: "{{ docker_password }}"
+
+    - name: Run Docker Compose
+      command: docker compose up -d
+      args:
+        chdir: /srv/voice2text
+      notify:
+      - Restart Docker Containers
+
+  handlers:
+    - name: Restart Docker Containers
+      command: docker compose restart
+      args:
+        chdir: /srv/voice2text

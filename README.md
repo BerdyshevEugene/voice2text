@@ -27,7 +27,17 @@ voice2text_transcriber
 │   │
 │   └── main.py - запуск программы
 │
-└── README.md
+├── README.md
+│
+├── docker-compose.yml - для запуска приложения через docker compose
+├── Dockerfile - сборка приложения в Docker
+│
+├── Jenkinsfile - файл конфигурации pipline Jenkins
+├── ssh_key_docker_jenkins - SSH ключ для подключения к серверу с Docker (по умолчанию отсутвует)
+│
+├── ansible.cfg - настройки для Ansible
+├── inventory.ini - список хостов для Ansible (по умолчанию отсутвует)
+└── playbook.yml - сценарий для Ansible
 ```
 
 ## Инструкция
@@ -68,7 +78,30 @@ docker login
 ``` 
 2. Запуск Docker-контейнера
 ```
-docker-compose up
+docker compose up
+```
+
+## CI/CD
+
+### Jenkins
+
+В web-интерфейсе создать новый проект и указать репозиторий. В  Config File Management создать файлы:
+1. inventory.ini (ID - voice2text_inventory)
+2. .env	(ID - voice2text.env)
+
+В Credentials добавить:
+1. ftp_credentials - Логин и пароль от FTP
+2. docker-hub-cred - Логин и пароль от Docker Hub
+3. ssh-docker-server-key - SSH ключ от сервера с Docker
+4. bot_token - Token от бота Telegram
+5. chat_id - ID чата Telegram
+6. message_thread_id - ID темы супергруппы Telegram
+
+### Ansible
+
+Для ручного запуска необходимо в корне репозитория положить ssh ключ ssh_key_docker_jenkins и выполнить команду
+```
+ansible-playbook playbook.yml --extra-vars "docker_user=ЛОГИН docker_password=ПАРОЛЬ"
 ```
 ## Остальная информация
 
@@ -82,6 +115,8 @@ ProductName: Voice2text_transcriber
 
 Author: Berdyshev E.A.
 
+CI/CD Author: Moldon E.D.
+
 Development and support: Berdyshev E.A.
 
 LegalCopyright: © GMG. All rights reserved.
@@ -91,3 +126,9 @@ LegalCopyright: © GMG. All rights reserved.
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
+![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)
+
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=for-the-badge&logo=ansible&logoColor=white)

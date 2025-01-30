@@ -1,8 +1,8 @@
-version: '3.8'
-
 services:
   app:
-    image: gsssupport/myvoice2text_transcriberapp:latest
+    image: gsssupport/voice2text:latest
+    container_name: voice2text
+    restart: always
     deploy:
       replicas: 1
     env_file:
