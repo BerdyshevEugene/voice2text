@@ -28,7 +28,7 @@ def reduce_noise(file_path):
     reduced_noise = nr.reduce_noise(
         y=samples,
         sr=audio.frame_rate,
-        prop_decrease=0.5,  # Уменьшаем шум на 50%
+        prop_decrease=0.5,  # Уменьшаем шум на ...%
         stationary=False,   # Для нестационарного шума
         n_fft=1024,         # Размер окна для FFT
         win_length=512,     # Длина окна
@@ -36,7 +36,7 @@ def reduce_noise(file_path):
     )
 
     # восстановление высоких частот
-    restored_audio = high_pass_filter(
+    filtered_audio = high_pass_filter(
         AudioSegment(
             reduced_noise.tobytes(),
             frame_rate=audio.frame_rate,
@@ -47,7 +47,7 @@ def reduce_noise(file_path):
     )
 
     temp_file = file_path.replace('.wav', '_noise_reduced.wav')
-    restored_audio.export(temp_file, format='wav')
+    filtered_audio.export(temp_file, format='wav')
     return temp_file
 
 
@@ -61,7 +61,7 @@ def normalize_audio(file_path):
 
 
 def improve_audio_quality(file_path):
-    # file_path = reduce_noise(file_path)
+    file_path = reduce_noise(file_path)
     file_path = normalize_audio(file_path)
     return file_path
 
@@ -69,7 +69,9 @@ def improve_audio_quality(file_path):
 def correct_transcription(text):
     '''функция для замены ошибочных фраз в тексте'''
     for wrong, correct in replacement_dict.items():
-        text = text.replace(wrong, correct)
+        if wrong in text:
+            text = text.replace(wrong, correct)
+            logger.info(f'"{wrong}" -> "{correct}"')
     return text
 
 
