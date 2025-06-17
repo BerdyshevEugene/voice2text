@@ -1,5 +1,5 @@
 
-[![Ruff](https://github.com/BerdyshevEugene/voice2text_transcriber/actions/workflows/ruff.yml/badge.svg)](https://github.com/BerdyshevEugene/voice2text_transcriber/actions/workflows/ruff.yml)
+[![Ruff](https://github.com/BerdyshevEugene/voice2text_transcriber/actions/workflows/ruff.yml/badge.svg?cache=buster)](https://github.com/BerdyshevEugene/voice2text_transcriber/actions/workflows/ruff.yml)
 
 # Voice2text_transcriber
 
