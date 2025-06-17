@@ -1,8 +1,14 @@
+
+[![Ruff](https://github.com/BerdyshevEugene/voice2text/actions/workflows/ruff.yml/badge.svg)](https://github.com/BerdyshevEugene/voice2text/actions/workflows/ruff.yml)
+
 # Voice2text_transcriber
 
 Программа на fastapi, для расшифровки аудиозаписи в текст
 
 ## Структура проекта:
+
+<details>
+
 ```python
 
 voice2text_transcriber
@@ -13,7 +19,7 @@ voice2text_transcriber
 │   │   ├── audio_vosk.py - улучшение кач-ва аудио, форматирует аудио в текст
 │   │   ├── message_handler.py - обработка данных из RabbitMQ
 │   │   ├── socket_communication.py - отправка данных в сокет datagate
-│   │   ├── utils.py - функция скачивает .wav файл по ссылке (удалить позднее)
+│   │   ├── utils.py - функция скачивает .wav файл по ссылке (удалить позднее) 
 │   │   │
 │   │   ├── queries.py - здесь содержатся запросы для обработки данных и вставку в БД
 │   │   └── routes_handler.py - содержит роуты по котороым обрабатываются данные
@@ -30,23 +36,113 @@ voice2text_transcriber
 └── README.md
 ```
 
-## Инструкция
+</details>
 
-1. создайте и активируйте виртуальное окружение и установите зависимости:.
+---
 
+## Установка и использование UV
+
+<details>
+<summary>📦 Способы установки UV</summary>
+
+### 1. Установка через автономные установщики (рекомендуется)
+
+**Для macOS и Linux:**
 ```bash
-py -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-2. в send.py в строке data = {"url": "url"} передайте url аудиозаписи для расшифровки
-3. запустите приложение: 
-```bash
-uvicorn main:app --reload
-uvicorn main:app --host 0.0.0.0 --port 8000
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-## Инструкция Docker
+**Для Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+### 2. Установка через PyPI (альтернативный способ)
+```bash
+pip install uv
+```
+
+### Обновление UV
+После установки вы можете обновить UV до последней версии:
+```bash
+uv self update
+```
+
+🔗 Подробнее об установке: [Официальная документация](https://docs.astral.sh/uv/getting-started/installation/)
+</details>
+
+---
+
+<summary>🚀 Основные команды UV</summary>
+
+<details>
+
+### Управление Python-окружением
+
+**Установка конкретной версии Python:**
+```bash
+uv python install 3.13  # Установит Python 3.13
+```
+
+### Управление зависимостями
+
+**Синхронизация зависимостей проекта:**
+```bash
+uv sync  # Аналог pip install + pip-compile
+```
+
+**Запуск команд в окружении проекта:**
+```bash
+uv run <COMMAND>  # Например: uv run pytest
+```
+
+**Запуск Django-сервера:**
+```bash
+uv run manage.py runserver  # Альтернатива python manage.py runserver
+```
+</details>
+
+---
+
+
+<summary>🔍 Интеграция с Ruff</summary>
+
+<details>
+
+[Ruff](https://github.com/astral-sh/ruff) - это молниеносный линтер для Python, также разработанный Astral.
+
+**Установка Ruff через UV:**
+```bash
+uvx ruff  # Установит последнюю версию Ruff
+```
+
+**Проверка кода с помощью Ruff:**
+```bash
+uvx ruff check .  # Проверит все файлы в текущей директории
+```
+</details>
+
+---
+
+## Инструкция по запуску проекта
+
+<details>
+
+### Установка и запуск окружения:
+```bash
+uv venv -p 3.11 .venv  # создаём виртуальное окружение на python 3.11
+uv pip install -r requirements.txt  # ставим зависимости
+```
+
+### Запуск программы:
+```bash
+cd src
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+программа автоматически подключается к очереди RabbitMQ и получает данные для расшифровки в виде словаря
+
+## Запуск проекта в Docker
 
 ### Сборка
 1. Авторизация в Docker Hub 
@@ -61,6 +157,7 @@ docker build -t gsssupport/myvoice2text_transcriberapp:latest .
 ```
 docker push gsssupport/myvoice2text_transcriberapp:latest
 ```
+
 ### Запуск
 1. Авторизация в Docker Hub 
 ```
@@ -70,24 +167,23 @@ docker login
 ```
 docker-compose up
 ```
+
+</details>
+
+---
+
 ## Остальная информация
 
+<details>
+
+```
 CompanyName: GMG
-
-FileDescription: Voice2text_transcriber
-
+FileDescription: voice2text
 InternalName: V2T
-
-ProductName: Voice2text_transcriber
-
+ProductName: voice2text
 Author: Berdyshev E.A.
-
 Development and support: Berdyshev E.A.
-
 LegalCopyright: © GMG. All rights reserved.
+```
 
-
-
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+</details>

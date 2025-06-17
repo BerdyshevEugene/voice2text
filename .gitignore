@@ -160,3 +160,4 @@ cython_debug/
 send.py
 /vosk/
 dict.py
+vosk_models/

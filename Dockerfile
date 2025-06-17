@@ -1,42 +1,51 @@
-# Используем официальный базовый образ Python
-FROM python:3.11.11-slim-bookworm
+# Use official Python 3.13 slim image based on Debian Bookworm
+FROM python:3.13-slim-bookworm
 
-# Устанавливаем переменные окружения
-# This flag is important to output python logs correctly in docker!
-# Flag to optimize container size a bit by removing runtime python cache
-#ENV PYTHONUNBUFFERED=1 \
-#    PYTHONDONTWRITEBYTECODE=1
+# Install UV (ultra-fast Python package installer) from Astral.sh
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Устанавливаем рабочую директорию
+# Ensure Python output is sent straight to terminal without buffering
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# ======================
+# SYSTEM DEPENDENCIES
+# ======================
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl gettext && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set working directory inside container
 WORKDIR /app
 
-# Копируем файл зависимостей
-COPY requirements.txt .
+# ======================
+# DEPENDENCY INSTALLATION
+# ======================
+# Copies the dependency files (py project.tool and uv.lock) to /app.
+COPY pyproject.toml uv.lock ./
 
-# Устанавливаем зависимости системы и Python
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
-	portaudio19-dev \
-    ffmpeg \
-    && python3 -m venv /venv \
-    && /venv/bin/pip install --upgrade pip \
-    && /venv/bin/pip install -r requirements.txt \
-    && apt-get remove -y \
-    gcc \
-    libpq-dev \
-	portaudio19-dev \
-    && apt-get autoremove -y \
-	&& apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Install Python dependencies using UV:
+# --locked: ensures exact versions from lockfile are used
+# Copies the rest of the project code to /app.
+RUN uv sync --locked
 
+# ======================
+# APPLICATION CODE
+# ======================
+# Copy the rest of the application code
+# Note: This is done after dependency installation for better caching
+COPY . .
 
-# Копируем исходный код приложения
-COPY src /app/src
+# Copies the script entrypoint.sh in /app.
+# Makes it executable (chmod +x).
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-COPY vosk /app/vosk
+# ======================
+# RUNTIME CONFIGURATION
+# ======================
+# Expose the port Django runs on
+EXPOSE 8000
 
-WORKDIR /app/src
-
-# Указываем команду для запуска приложения
-CMD ["/bin/bash", "-c", "source /venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000"]
+# Launches the application through a script entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
