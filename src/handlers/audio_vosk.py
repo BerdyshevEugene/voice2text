@@ -1,5 +1,5 @@
 from pydub import AudioSegment
-from pydub.effects import normalize, low_pass_filter, high_pass_filter
+from pydub.effects import normalize, high_pass_filter
 import os
 import wave
 import json

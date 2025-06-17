@@ -6,7 +6,6 @@ import os
 from loguru import logger
 from tempfile import NamedTemporaryFile
 
-from handlers.socket_communication import send_data_to_socket
 from handlers.audio_vosk import process_audio
 from rabbitmq.publisher import publish_results_to_queue, publish_results_to_v2t_vrbmtrcs_queue
 

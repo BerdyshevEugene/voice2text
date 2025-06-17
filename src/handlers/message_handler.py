@@ -1,6 +1,4 @@
-import asyncio
 import json
-import os
 
 from loguru import logger
 from aio_pika import IncomingMessage
