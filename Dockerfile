@@ -1,5 +1,5 @@
-# Use official Python 3.13 slim image based on Debian Bookworm
-FROM python:3.13-slim-bookworm
+# Use official Python 3.11 slim image based on Debian Bookworm
+FROM python:3.11-slim-bookworm
 
 # Install UV (ultra-fast Python package installer) from Astral.sh
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -12,7 +12,15 @@ ENV PYTHONUNBUFFERED=1 \
 # SYSTEM DEPENDENCIES
 # ======================
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl gettext && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    gettext \
+    gcc \
+    build-essential \
+    python3-dev \
+    libc6-dev \
+    libportaudio2 \
+    portaudio19-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory inside container
@@ -21,19 +29,17 @@ WORKDIR /app
 # ======================
 # DEPENDENCY INSTALLATION
 # ======================
-# Copies the dependency files (py project.tool and uv.lock) to /app.
+# Copies the dependency files (pyproject.toml and uv.lock) to /app.
 COPY pyproject.toml uv.lock ./
 
 # Install Python dependencies using UV:
 # --locked: ensures exact versions from lockfile are used
-# Copies the rest of the project code to /app.
 RUN uv sync --locked
 
 # ======================
 # APPLICATION CODE
 # ======================
 # Copy the rest of the application code
-# Note: This is done after dependency installation for better caching
 COPY . .
 
 # Copies the script entrypoint.sh in /app.

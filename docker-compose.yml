@@ -7,8 +7,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./:/app
-      - /app/.venv
+      - ./apps:/app/apps
     command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       RABBITMQ_URL: ${RABBITMQ_URL}
