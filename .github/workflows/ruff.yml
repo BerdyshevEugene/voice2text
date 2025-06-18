@@ -19,7 +19,7 @@ jobs:
         run: |
           pip install uv
           uv venv .venv
-          UV_VENV=.venv uv pip install ruff
+          UV_VENV=.venv uv pip install --no-deps ruff
 
       - name: run ruff check
         run: UV_VENV=.venv uv run -- ruff check .
