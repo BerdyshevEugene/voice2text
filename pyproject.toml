@@ -1,5 +1,5 @@
 [project]
-name = "pythonbooks"
+name = "voice2text"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.11"
@@ -135,4 +135,9 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "sorl-thumbnail==12.11.0",
     "python-dotenv>=1.0.0",
+]
+[tool.ruff]
+exclude = [
+  "path/to/tensorflow/**",
+  "some/other/path/**"
 ]
